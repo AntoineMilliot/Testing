@@ -1,0 +1,37 @@
+import dns.resolver
+
+def check_dns_records(domain):
+    records = {
+        'SPF': None,
+        'DKIM': None,
+        'DMARC': None
+    }
+
+    try:
+        spf = dns.resolver.resolve(domain, 'TXT')
+        for rdata in spf:
+            if "v=spf" in str(rdata):
+                records['SPF'] = str(rdata)
+                break
+    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers):
+        pass
+
+    try:
+        dkim = dns.resolver.resolve(f'_domainkey.{domain}', 'TXT')
+        records['DKIM'] = str(dkim[0])
+    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers):
+        pass
+
+    try:
+        dmarc = dns.resolver.resolve(f'_dmarc.{domain}', 'TXT')
+        records['DMARC'] = str(dmarc[0])
+    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers):
+        pass
+
+    return records
+
+domain = 'example.com'
+records = check_dns_records(domain)
+print(f"DNS records for {domain}:")
+for record_type, record_value in records.items():
+    print(f"{record_type}: {record_value}")
